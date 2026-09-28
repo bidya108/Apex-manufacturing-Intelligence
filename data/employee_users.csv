@@ -1,0 +1,8 @@
+user_id,name,email,role,account_status,created_date
+1,Aarav Mehta,aarav.mehta@apexmanufacturing.com,Executive,Active,2024-01-10
+2,Priya Nair,priya.nair@apexmanufacturing.com,Production Manager,Active,2024-01-15
+3,Rahul Sharma,rahul.sharma@apexmanufacturing.com,Maintenance Manager,Active,2024-01-20
+4,Ananya Rao,ananya.rao@apexmanufacturing.com,Data Analyst,Active,2024-02-01
+5,Vikram Singh,vikram.singh@apexmanufacturing.com,Data Scientist,Active,2024-02-05
+6,Neha Patel,neha.patel@apexmanufacturing.com,Data Administrator,Active,2024-02-10
+7,Karan Shah,karan.shah@apexmanufacturing.com,System Administrator,Active,2024-02-15

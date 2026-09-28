@@ -1,0 +1,5 @@
+issue_id,dataset,record_identifier,issue_type,issue_description,severity,detected_date,resolution_status,resolved_date
+1,production_records,PR-1023,Missing Value,Production target missing,Medium,2025-03-10 09:15:00,Resolved,2025-03-10 11:30:00
+2,machine_sensor_readings,SR-2055,Invalid Value,Temperature outside expected range,High,2025-04-12 14:20:00,Resolved,2025-04-12 16:00:00
+3,maintenance_records,MR-0342,Duplicate,Duplicate maintenance record detected,Low,2025-05-18 10:45:00,Resolved,2025-05-18 12:10:00
+4,quality_records,QR-1876,Missing Value,Quality status missing,Medium,2025-06-22 08:30:00,Open,

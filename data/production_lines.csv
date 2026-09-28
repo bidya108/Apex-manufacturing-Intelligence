@@ -1,0 +1,11 @@
+production_line_id,facility_id,production_line_name,production_line_status,production_capacity,created_date
+1,1,Assembly Line A,Active,1200,2024-02-01
+2,1,Assembly Line B,Active,1000,2024-02-15
+3,2,Assembly Line A,Active,1500,2024-03-01
+4,2,Packaging Line A,Active,1800,2024-03-10
+5,3,Assembly Line A,Active,1300,2024-04-01
+6,3,Quality Line A,Active,900,2024-04-15
+7,4,Assembly Line A,Active,1400,2024-05-01
+8,4,Packaging Line A,Active,1600,2024-05-10
+9,5,Assembly Line A,Active,1100,2024-06-01
+10,5,Packaging Line A,Active,1400,2024-06-15

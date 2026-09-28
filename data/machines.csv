@@ -1,0 +1,21 @@
+machine_id,production_line_id,machine_name,machine_type,manufacturer,installation_date,operating_status,last_maintenance_date
+1,1,CNC Machine 01,CNC,Siemens,2024-02-05,Running,2026-08-15
+2,1,Assembly Robot 01,Robotic Arm,ABB,2024-02-10,Running,2026-08-20
+3,2,CNC Machine 02,CNC,Fanuc,2024-02-20,Running,2026-08-18
+4,2,Welding Robot 01,Robotic Welder,KUKA,2024-02-25,Running,2026-08-22
+5,3,CNC Machine 03,CNC,Siemens,2024-03-05,Running,2026-08-10
+6,3,Press Machine 01,Hydraulic Press,Bosch,2024-03-12,Running,2026-08-25
+7,4,Packaging Machine 01,Packaging,ABB,2024-03-15,Running,2026-08-12
+8,4,Conveyor System 01,Conveyor,Siemens,2024-03-20,Running,2026-08-19
+9,5,CNC Machine 04,CNC,Fanuc,2024-04-05,Running,2026-08-14
+10,5,Assembly Robot 02,Robotic Arm,KUKA,2024-04-10,Running,2026-08-21
+11,6,Inspection Machine 01,Inspection,Bosch,2024-04-20,Running,2026-08-16
+12,6,Quality Scanner 01,Scanner,Siemens,2024-04-25,Running,2026-08-23
+13,7,CNC Machine 05,CNC,Siemens,2024-05-05,Running,2026-08-11
+14,7,Welding Robot 02,Robotic Welder,ABB,2024-05-12,Running,2026-08-17
+15,8,Packaging Machine 02,Packaging,KUKA,2024-05-15,Running,2026-08-24
+16,8,Conveyor System 02,Conveyor,Siemens,2024-05-20,Running,2026-08-13
+17,9,CNC Machine 06,CNC,Fanuc,2024-06-05,Running,2026-08-18
+18,9,Assembly Robot 03,Robotic Arm,ABB,2024-06-10,Running,2026-08-20
+19,10,Packaging Machine 03,Packaging,Bosch,2024-06-20,Running,2026-08-15
+20,10,Conveyor System 03,Conveyor,Siemens,2024-06-25,Running,2026-08-22
