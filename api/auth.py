@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from pwdlib import PasswordHash
 
 from api.security import create_access_token
+from api.audit import log_audit_event
 
 
 router = APIRouter()
@@ -56,6 +57,17 @@ def login(request: LoginRequest):
         cursor.close()
         connection.close()
 
+        log_audit_event(
+            None,
+            request.username,
+            None,
+            "LOGIN_FAILED",
+            "/login",
+            "POST",
+            401,
+            "Invalid username"
+        )
+
         raise HTTPException(
             status_code=401,
             detail="Invalid username or password"
@@ -66,6 +78,17 @@ def login(request: LoginRequest):
     if account_status != "Active":
         cursor.close()
         connection.close()
+
+        log_audit_event(
+            user_id,
+            username,
+            role_name,
+            "LOGIN_FAILED",
+            "/login",
+            "POST",
+            403,
+            "User account is not active"
+        )
 
         raise HTTPException(
             status_code=403,
@@ -78,6 +101,17 @@ def login(request: LoginRequest):
     ):
         cursor.close()
         connection.close()
+
+        log_audit_event(
+            user_id,
+            username,
+            role_name,
+            "LOGIN_FAILED",
+            "/login",
+            "POST",
+            401,
+            "Invalid password"
+        )
 
         raise HTTPException(
             status_code=401,
@@ -97,6 +131,17 @@ def login(request: LoginRequest):
 
     cursor.close()
     connection.close()
+
+    log_audit_event(
+        user_id,
+        username,
+        role_name,
+        "LOGIN_SUCCESS",
+        "/login",
+        "POST",
+        200,
+        "Successful user login"
+    )
 
     access_token = create_access_token(
         user_id,
