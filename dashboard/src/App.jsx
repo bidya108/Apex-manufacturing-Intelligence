@@ -144,6 +144,7 @@ function DashboardPage({
   riskData,
   maintenanceAlerts,
   loading,
+  canViewGeneralData,
 }) {
   const formatProduction = (value) => {
     if (value === undefined || value === null) return "--";
@@ -164,16 +165,22 @@ function DashboardPage({
     <>
       <div className="page-heading">
         <div>
-          <h2>Operational Overview</h2>
+          <h2>
+            {canViewGeneralData
+              ? "Operational Overview"
+              : "Maintenance Operations Overview"}
+          </h2>
           <p>
-            Monitor production performance, machine health and
-            operational risk.
+            {canViewGeneralData
+              ? "Monitor production performance, machine health and operational risk."
+              : "Monitor machine condition, maintenance risk and operational alerts."}
           </p>
         </div>
 
         <div className="period-label">Full Year</div>
       </div>
 
+      {canViewGeneralData && (
       <div className="kpi-grid">
         <KpiCard
           icon={Gauge}
@@ -221,7 +228,9 @@ function DashboardPage({
           trendDown
         />
       </div>
+      )}
 
+      {canViewGeneralData && (
       <div className="charts-row">
         <section className="panel production-panel">
           <div className="panel-header">
@@ -350,6 +359,7 @@ function DashboardPage({
           </div>
         </section>
       </div>
+      )}
 
       <div className="bottom-row">
         <section className="panel risk-panel">
@@ -2031,6 +2041,7 @@ function DataQualityPage({
 function SettingsPage({
   apiConnected,
   qualitySummary,
+  auth,
 }) {
   const latestValidation =
     qualitySummary?.latest_validation;
@@ -2163,7 +2174,7 @@ function SettingsPage({
 
               <div>
                 <span>User</span>
-                <strong>Business Analyst</strong>
+                <strong>{auth?.username || "--"}</strong>
               </div>
             </div>
 
@@ -2175,7 +2186,7 @@ function SettingsPage({
 
               <div>
                 <span>Role</span>
-                <strong>Business Analyst</strong>
+                <strong>{auth?.role || "--"}</strong>
               </div>
             </div>
 
@@ -2401,8 +2412,8 @@ function SettingsPage({
             </p>
           </div>
 
-          <span className="status-badge medium">
-            Next Phase
+          <span className="status-badge low">
+            Implemented
           </span>
         </div>
 
@@ -2415,8 +2426,8 @@ function SettingsPage({
                 <Lock size={17} />
               </div>
 
-              <span className="status-badge medium">
-                Next Phase
+              <span className="status-badge low">
+                Implemented
               </span>
             </div>
 
@@ -2436,8 +2447,8 @@ function SettingsPage({
                 <ShieldCheck size={17} />
               </div>
 
-              <span className="status-badge medium">
-                Next Phase
+              <span className="status-badge low">
+                Implemented
               </span>
             </div>
 
@@ -2478,15 +2489,15 @@ function SettingsPage({
                 <Lock size={17} />
               </div>
 
-              <span className="status-badge medium">
-                Development
+              <span className="status-badge low">
+                Implemented
               </span>
             </div>
 
             <strong>API Authentication</strong>
 
             <span>
-              API currently runs without authentication
+              JWT-protected API access with role-based authorization
             </span>
 
           </div>
@@ -2564,9 +2575,9 @@ function SettingsPage({
 
             <div>
               <span>Security</span>
-              <strong>Next Phase</strong>
+              <strong>Implemented</strong>
               <small>
-                Authentication and access control
+                JWT authentication and role-based access control
               </small>
             </div>
           </div>
@@ -2580,11 +2591,352 @@ function SettingsPage({
   );
 }
 
+
+const GENERAL_DATA_ROLES = [
+  "Executive",
+  "Production Manager",
+  "Data Analyst",
+  "Data Scientist",
+  "System Administrator",
+];
+
+const RISK_ROLES = [
+  "Executive",
+  "Maintenance Manager",
+  "Data Scientist",
+  "Data Analyst",
+  "System Administrator",
+];
+
+const MACHINE_HEALTH_ROLES = [
+  "Maintenance Manager",
+  "Data Scientist",
+  "Data Analyst",
+  "System Administrator",
+];
+
+const MAINTENANCE_ROLES = [
+  "Maintenance Manager",
+  "Data Scientist",
+  "System Administrator",
+];
+
+const ANALYTICS_ROLES = [
+  "Executive",
+  "Data Analyst",
+  "Data Scientist",
+  "Production Manager",
+  "System Administrator",
+];
+
+const DATA_QUALITY_ROLES = [
+  "Data Analyst",
+  "Data Administrator",
+  "Data Scientist",
+  "System Administrator",
+];
+
+
+function getStoredAuth() {
+  try {
+    const stored = sessionStorage.getItem("apex_auth");
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+
+async function apiFetch(path, token) {
+  const response = await fetch(
+    `${API_URL}${path}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (response.status === 401) {
+    const error = new Error("Authentication expired");
+    error.status = 401;
+    throw error;
+  }
+
+  return response;
+}
+
+
+function LoginPage({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setLoginError("");
+    setLoggingIn(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username,
+            password,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Unable to sign in"
+        );
+      }
+
+      onLogin(data);
+    } catch (error) {
+      setLoginError(
+        error.message || "Unable to sign in"
+      );
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f5f1e8",
+        padding: "24px",
+        fontFamily: "Times New Roman, Times, serif",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "430px",
+          background: "#fffdf8",
+          border: "1px solid #d9d1bf",
+          borderRadius: "14px",
+          padding: "36px",
+          boxShadow: "0 18px 45px rgba(40, 48, 29, 0.12)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+            marginBottom: "28px",
+          }}
+        >
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#66734a",
+              color: "#ffffff",
+            }}
+          >
+            <Factory size={24} />
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontSize: "24px",
+                fontWeight: 700,
+                color: "#28301d",
+              }}
+            >
+              Apex Manufacturing
+            </div>
+
+            <div
+              style={{
+                marginTop: "3px",
+                color: "#6d735f",
+                fontSize: "14px",
+              }}
+            >
+              Manufacturing Intelligence Platform
+            </div>
+          </div>
+        </div>
+
+        <h2
+          style={{
+            margin: "0 0 8px",
+            color: "#28301d",
+            fontSize: "25px",
+          }}
+        >
+          Sign in
+        </h2>
+
+        <p
+          style={{
+            margin: "0 0 26px",
+            color: "#747866",
+            fontSize: "15px",
+            lineHeight: 1.5,
+          }}
+        >
+          Sign in to access operational analytics and
+          manufacturing intelligence.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "7px",
+              color: "#3f4633",
+              fontWeight: 600,
+              fontSize: "14px",
+            }}
+          >
+            Username
+          </label>
+
+          <input
+            type="text"
+            value={username}
+            onChange={(event) =>
+              setUsername(event.target.value)
+            }
+            placeholder="Enter username"
+            autoComplete="username"
+            required
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "12px 13px",
+              marginBottom: "17px",
+              border: "1px solid #cfc7b5",
+              borderRadius: "8px",
+              background: "#ffffff",
+              color: "#28301d",
+              fontFamily: "inherit",
+              fontSize: "15px",
+            }}
+          />
+
+          <label
+            style={{
+              display: "block",
+              marginBottom: "7px",
+              color: "#3f4633",
+              fontWeight: 600,
+              fontSize: "14px",
+            }}
+          >
+            Password
+          </label>
+
+          <input
+            type="password"
+            value={password}
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
+            placeholder="Enter password"
+            autoComplete="current-password"
+            required
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "12px 13px",
+              marginBottom: "18px",
+              border: "1px solid #cfc7b5",
+              borderRadius: "8px",
+              background: "#ffffff",
+              color: "#28301d",
+              fontFamily: "inherit",
+              fontSize: "15px",
+            }}
+          />
+
+          {loginError && (
+            <div
+              style={{
+                marginBottom: "18px",
+                padding: "11px 12px",
+                borderRadius: "8px",
+                background: "#f7e8e5",
+                border: "1px solid #dfb8b0",
+                color: "#8c5145",
+                fontSize: "14px",
+              }}
+            >
+              {loginError}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loggingIn}
+            style={{
+              width: "100%",
+              border: "none",
+              borderRadius: "8px",
+              padding: "13px",
+              background: "#66734a",
+              color: "#ffffff",
+              fontFamily: "inherit",
+              fontSize: "15px",
+              fontWeight: 700,
+              cursor: loggingIn ? "wait" : "pointer",
+              opacity: loggingIn ? 0.7 : 1,
+            }}
+          >
+            {loggingIn ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+
+        <div
+          style={{
+            marginTop: "22px",
+            paddingTop: "18px",
+            borderTop: "1px solid #e2dccf",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            color: "#747866",
+            fontSize: "13px",
+          }}
+        >
+          <Lock size={14} />
+          <span>Protected by JWT authentication and RBAC</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 /* ============================================================
    MAIN APP
    ============================================================ */
 
 function App() {
+  const [auth, setAuth] = useState(getStoredAuth);
   const [activePage, setActivePage] = useState("dashboard");
 
   const [kpis, setKpis] = useState(null);
@@ -2626,71 +2978,188 @@ function App() {
   const [apiError, setApiError] = useState(false);
 
 
+  const handleLogin = (loginData) => {
+    sessionStorage.setItem(
+      "apex_auth",
+      JSON.stringify(loginData)
+    );
+
+    setAuth(loginData);
+    setActivePage("dashboard");
+  };
+
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("apex_auth");
+    setAuth(null);
+  };
+
+
+  const canViewGeneralData =
+    GENERAL_DATA_ROLES.includes(auth?.role);
+
+  const canViewRisk =
+    RISK_ROLES.includes(auth?.role);
+
+  const canViewMachineHealth =
+    MACHINE_HEALTH_ROLES.includes(auth?.role);
+
+  const canViewMaintenance =
+    MAINTENANCE_ROLES.includes(auth?.role);
+
+  const canViewAnalytics =
+    ANALYTICS_ROLES.includes(auth?.role);
+
+  const canViewDataQuality =
+    DATA_QUALITY_ROLES.includes(auth?.role);
+
+
+
   /* ============================================================
      DASHBOARD DATA
      ============================================================ */
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        const [
-          kpiResponse,
-          productionResponse,
-          facilityResponse,
-          riskResponse,
-          machineHealthResponse,
-          maintenanceResponse,
-        ] = await Promise.all([
-          fetch(`${API_URL}/kpis`),
-          fetch(`${API_URL}/production-performance`),
-          fetch(`${API_URL}/facility-performance`),
-          fetch(`${API_URL}/machine-risk-distribution`),
-          fetch(`${API_URL}/machine-health`),
-          fetch(`${API_URL}/maintenance-alerts`),
-        ]);
+    if (!auth?.access_token) {
+      return;
+    }
 
-        if (
-          !kpiResponse.ok ||
-          !productionResponse.ok ||
-          !facilityResponse.ok ||
-          !riskResponse.ok ||
-          !machineHealthResponse.ok ||
-          !maintenanceResponse.ok
-        ) {
-          throw new Error("Unable to load dashboard data");
+    const loadDashboardData = async () => {
+      setLoading(true);
+      setApiError(false);
+
+      try {
+        const requests = {};
+
+        if (canViewGeneralData) {
+          requests.kpis = apiFetch(
+            "/kpis",
+            auth.access_token
+          );
+          requests.production = apiFetch(
+            "/production-performance",
+            auth.access_token
+          );
+          requests.facilities = apiFetch(
+            "/facility-performance",
+            auth.access_token
+          );
         }
 
-        const kpiData = await kpiResponse.json();
-        const production = await productionResponse.json();
-        const facilities = await facilityResponse.json();
-        const risks = await riskResponse.json();
-        const health = await machineHealthResponse.json();
-        const maintenance = await maintenanceResponse.json();
+        if (canViewRisk) {
+          requests.risk = apiFetch(
+            "/machine-risk-distribution",
+            auth.access_token
+          );
+        }
 
-        setKpis(kpiData);
-        setProductionData(production);
-        setFacilityData(facilities);
+        if (canViewMachineHealth) {
+          requests.health = apiFetch(
+            "/machine-health",
+            auth.access_token
+          );
+        }
 
-        setRiskData(
-          risks.map((item) => ({
-            name: `${item.risk_level} Risk`,
-            value: item.count,
-          }))
+        if (canViewMaintenance) {
+          requests.maintenance = apiFetch(
+            "/maintenance-alerts",
+            auth.access_token
+          );
+        }
+
+        const entries = Object.entries(requests);
+        const responses = await Promise.all(
+          entries.map(async ([key, request]) => [
+            key,
+            await request,
+          ])
         );
 
-        setMachineHealth(health);
-        setMaintenanceAlerts(maintenance);
+        for (const [, response] of responses) {
+          if (!response.ok) {
+            throw new Error(
+              "Unable to load dashboard data"
+            );
+          }
+        }
+
+        const responseMap = Object.fromEntries(responses);
+
+        if (responseMap.kpis) {
+          setKpis(await responseMap.kpis.json());
+        } else {
+          setKpis(null);
+        }
+
+        if (responseMap.production) {
+          setProductionData(
+            await responseMap.production.json()
+          );
+        } else {
+          setProductionData([]);
+        }
+
+        if (responseMap.facilities) {
+          setFacilityData(
+            await responseMap.facilities.json()
+          );
+        } else {
+          setFacilityData([]);
+        }
+
+        if (responseMap.risk) {
+          const risks = await responseMap.risk.json();
+          setRiskData(
+            risks.map((item) => ({
+              name: `${item.risk_level} Risk`,
+              value: item.count,
+            }))
+          );
+        } else {
+          setRiskData([]);
+        }
+
+        if (responseMap.health) {
+          setMachineHealth(
+            await responseMap.health.json()
+          );
+        } else {
+          setMachineHealth([]);
+        }
+
+        if (responseMap.maintenance) {
+          setMaintenanceAlerts(
+            await responseMap.maintenance.json()
+          );
+        } else {
+          setMaintenanceAlerts([]);
+        }
 
         setLoading(false);
       } catch (error) {
-        console.error("Dashboard API error:", error);
+        console.error(
+          "Dashboard API error:",
+          error
+        );
+
+        if (error.status === 401) {
+          handleLogout();
+          return;
+        }
+
         setApiError(true);
         setLoading(false);
       }
     };
 
     loadDashboardData();
-  }, []);
+  }, [
+    auth,
+    canViewGeneralData,
+    canViewRisk,
+    canViewMachineHealth,
+    canViewMaintenance,
+  ]);
 
 
   /* ============================================================
@@ -2698,7 +3167,22 @@ function App() {
      ============================================================ */
 
   useEffect(() => {
+    if (!auth?.access_token) {
+      return;
+    }
+
+    if (!canViewAnalytics) {
+      setProductionAnalytics(null);
+      setDowntimeAnalytics(null);
+      setQualityAnalytics(null);
+      setMachineAnalytics(null);
+      setAnalyticsLoading(false);
+      return;
+    }
+
     const loadAnalyticsData = async () => {
+      setAnalyticsLoading(true);
+
       try {
         const [
           productionResponse,
@@ -2706,10 +3190,22 @@ function App() {
           qualityResponse,
           machineResponse,
         ] = await Promise.all([
-          fetch(`${API_URL}/analytics/production`),
-          fetch(`${API_URL}/analytics/downtime`),
-          fetch(`${API_URL}/analytics/quality`),
-          fetch(`${API_URL}/analytics/machines`),
+          apiFetch(
+            "/analytics/production",
+            auth.access_token
+          ),
+          apiFetch(
+            "/analytics/downtime",
+            auth.access_token
+          ),
+          apiFetch(
+            "/analytics/quality",
+            auth.access_token
+          ),
+          apiFetch(
+            "/analytics/machines",
+            auth.access_token
+          ),
         ]);
 
         if (
@@ -2718,7 +3214,9 @@ function App() {
           !qualityResponse.ok ||
           !machineResponse.ok
         ) {
-          throw new Error("Unable to load analytics data");
+          throw new Error(
+            "Unable to load analytics data"
+          );
         }
 
         const production =
@@ -2740,14 +3238,23 @@ function App() {
 
         setAnalyticsLoading(false);
       } catch (error) {
-        console.error("Analytics API error:", error);
+        console.error(
+          "Analytics API error:",
+          error
+        );
+
+        if (error.status === 401) {
+          handleLogout();
+          return;
+        }
+
         setApiError(true);
         setAnalyticsLoading(false);
       }
     };
 
     loadAnalyticsData();
-  }, []);
+  }, [auth, canViewAnalytics]);
 
 
   /* ============================================================
@@ -2755,16 +3262,39 @@ function App() {
      ============================================================ */
 
   useEffect(() => {
+    if (!auth?.access_token) {
+      return;
+    }
+
+    if (!canViewDataQuality) {
+      setQualitySummary(null);
+      setQualityIssues([]);
+      setValidationRuns([]);
+      setDataQualityLoading(false);
+      return;
+    }
+
     const loadDataQuality = async () => {
+      setDataQualityLoading(true);
+
       try {
         const [
           summaryResponse,
           issuesResponse,
           validationResponse,
         ] = await Promise.all([
-          fetch(`${API_URL}/data-quality/summary`),
-          fetch(`${API_URL}/data-quality/issues`),
-          fetch(`${API_URL}/data-quality/validation-runs`),
+          apiFetch(
+            "/data-quality/summary",
+            auth.access_token
+          ),
+          apiFetch(
+            "/data-quality/issues",
+            auth.access_token
+          ),
+          apiFetch(
+            "/data-quality/validation-runs",
+            auth.access_token
+          ),
         ]);
 
         if (
@@ -2797,13 +3327,18 @@ function App() {
           error
         );
 
+        if (error.status === 401) {
+          handleLogout();
+          return;
+        }
+
         setApiError(true);
         setDataQualityLoading(false);
       }
     };
 
     loadDataQuality();
-  }, []);
+  }, [auth, canViewDataQuality]);
 
 
   const pageTitles = {
@@ -2818,7 +3353,7 @@ function App() {
 
 
   const renderPage = () => {
-    if (activePage === "production") {
+    if (activePage === "production" && canViewGeneralData) {
       return (
         <ProductionPage
           productionData={productionData}
@@ -2835,7 +3370,10 @@ function App() {
       );
     }
 
-    if (activePage === "maintenance") {
+    if (
+      activePage === "maintenance" &&
+      canViewMaintenance
+    ) {
       return (
         <MaintenancePage
           maintenanceAlerts={maintenanceAlerts}
@@ -2843,7 +3381,7 @@ function App() {
       );
     }
 
-    if (activePage === "analytics") {
+    if (activePage === "analytics" && canViewAnalytics) {
       return (
         <AnalyticsPage
           productionAnalytics={productionAnalytics}
@@ -2855,7 +3393,7 @@ function App() {
       );
     }
 
-    if (activePage === "dataQuality") {
+    if (activePage === "dataQuality" && canViewDataQuality) {
       return (
         <DataQualityPage
           qualitySummary={qualitySummary}
@@ -2871,6 +3409,7 @@ function App() {
         <SettingsPage
           apiConnected={!apiError}
           qualitySummary={qualitySummary}
+          auth={auth}
         />
       );
     }
@@ -2883,9 +3422,25 @@ function App() {
         riskData={riskData}
         maintenanceAlerts={maintenanceAlerts}
         loading={loading}
+        canViewGeneralData={canViewGeneralData}
       />
     );
   };
+
+
+  if (!auth?.access_token) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+
+  const initials =
+    auth.username
+      ?.split(/[\s._-]+/)
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "AP";
 
 
   return (
@@ -2934,19 +3489,21 @@ function App() {
           </button>
 
 
-          <button
-            className={`nav-item ${
-              activePage === "production"
-                ? "active"
-                : ""
-            }`}
-            onClick={() =>
-              setActivePage("production")
-            }
-          >
-            <Factory size={18} />
-            Production
-          </button>
+          {canViewGeneralData && (
+            <button
+              className={`nav-item ${
+                activePage === "production"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActivePage("production")
+              }
+            >
+              <Factory size={18} />
+              Production
+            </button>
+          )}
 
 
           <button
@@ -2964,19 +3521,21 @@ function App() {
           </button>
 
 
-          <button
-            className={`nav-item ${
-              activePage === "maintenance"
-                ? "active"
-                : ""
-            }`}
-            onClick={() =>
-              setActivePage("maintenance")
-            }
-          >
-            <Wrench size={18} />
-            Maintenance
-          </button>
+          {canViewMaintenance && (
+            <button
+              className={`nav-item ${
+                activePage === "maintenance"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActivePage("maintenance")
+              }
+            >
+              <Wrench size={18} />
+              Maintenance
+            </button>
+          )}
 
         </div>
 
@@ -2988,34 +3547,38 @@ function App() {
           </div>
 
 
-          <button
-            className={`nav-item ${
-              activePage === "analytics"
-                ? "active"
-                : ""
-            }`}
-            onClick={() =>
-              setActivePage("analytics")
-            }
-          >
-            <BarChart3 size={18} />
-            Analytics
-          </button>
+          {canViewAnalytics && (
+            <button
+              className={`nav-item ${
+                activePage === "analytics"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActivePage("analytics")
+              }
+            >
+              <BarChart3 size={18} />
+              Analytics
+            </button>
+          )}
 
 
-          <button
-            className={`nav-item ${
-              activePage === "dataQuality"
-                ? "active"
-                : ""
-            }`}
-            onClick={() =>
-              setActivePage("dataQuality")
-            }
-          >
-            <ShieldCheck size={18} />
-            Data Quality
-          </button>
+          {canViewDataQuality && (
+            <button
+              className={`nav-item ${
+                activePage === "dataQuality"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActivePage("dataQuality")
+              }
+            >
+              <ShieldCheck size={18} />
+              Data Quality
+            </button>
+          )}
 
 
           <button
@@ -3070,20 +3633,30 @@ function App() {
             </button>
 
 
+            <button
+              className="notification-button"
+              onClick={handleLogout}
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              <Lock size={18} />
+              <span />
+            </button>
+
             <div className="user-profile">
 
               <div className="avatar">
-                BA
+                {initials}
               </div>
 
               <div>
 
                 <div className="user-role">
-                  Business Analyst
+                  {auth.role}
                 </div>
 
                 <div className="user-company">
-                  Apex Manufacturing
+                  {auth.username}
                 </div>
 
               </div>
@@ -3100,7 +3673,7 @@ function App() {
           {apiError && (
             <div className="api-warning">
               <AlertTriangle size={17} />
-              Unable to connect to the manufacturing API.
+              Unable to load one or more manufacturing data services.
             </div>
           )}
 
