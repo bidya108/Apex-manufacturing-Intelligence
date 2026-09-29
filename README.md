@@ -64,4 +64,4 @@ Status
 Core platform completed with database, pipelines, analytics, machine learning, API, authentication, and dashboard components.
 
 
-**This is the version I'd use.** It gives a recruiter the important information.
+**This is the version I'd use.** It gives a recruiter the important information in roughly 30 seconds without turning the README into project documentation.
