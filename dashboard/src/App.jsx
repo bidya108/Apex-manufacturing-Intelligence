@@ -3451,7 +3451,10 @@ function App() {
         <div className="brand">
 
           <div className="brand-icon">
-            <Factory size={22} />
+            <img
+              src="/assets/apex-panda-logo.png"
+              alt="Apex Manufacturing"
+            />
           </div>
 
           <div>

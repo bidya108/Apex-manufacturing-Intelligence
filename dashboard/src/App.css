@@ -42,13 +42,21 @@ button {
 }
 
 .brand-icon {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
+  background: #6f7f45;
   border-radius: 10px;
-  background: #66734a;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.brand-icon img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  display: block;
 }
 
 .brand-name {
@@ -1351,4 +1359,12 @@ button {
   .readiness-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.brand-icon img {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
