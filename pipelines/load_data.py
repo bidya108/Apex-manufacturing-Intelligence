@@ -167,21 +167,6 @@ load_table(
     ]
 )
 
-load_table(
-    "data/ml_predictions.csv",
-    "ml_prediction",
-    [
-        "prediction_id",
-        "machine_id",
-        "model_id",
-        "prediction_timestamp",
-        "failure_probability",
-        "risk_level",
-        "prediction_status"
-    ]
-)
-
-
 connection.commit()
 
 cursor.close()
