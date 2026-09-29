@@ -13,7 +13,6 @@ cursor = connection.cursor()
 tables = [
     "ml_prediction",
     "data_quality_issue",
-    "employee_user",
     "quality_record",
     "maintenance_record",
     "machine_sensor_reading",
@@ -23,10 +22,12 @@ tables = [
     "facility"
 ]
 
-for table in tables:
-    cursor.execute(f"TRUNCATE TABLE {table} CASCADE")
+cursor.execute(
+    "TRUNCATE TABLE " + ", ".join(tables)
+)
 
 connection.commit()
+
 
 def load_table(csv_file, table_name, columns):
     df = pd.read_csv(csv_file)
@@ -147,19 +148,6 @@ load_table(
         "defective_units",
         "defect_rate",
         "quality_status"
-    ]
-)
-
-load_table(
-    "data/employee_users.csv",
-    "employee_user",
-    [
-        "user_id",
-        "name",
-        "email",
-        "role",
-        "account_status",
-        "created_date"
     ]
 )
 
