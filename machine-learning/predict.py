@@ -1,5 +1,6 @@
 import joblib
 import pandas as pd
+import psycopg2
 
 
 MODEL_PATH = "machine-learning/machine_failure_model.joblib"
@@ -12,6 +13,67 @@ def load_model():
 
 def load_data():
     return pd.read_csv(FEATURES_PATH)
+
+
+def get_database_connection():
+    return psycopg2.connect(
+        dbname="apex_manufacturing",
+        user="bidya",
+        host="localhost",
+        port="5432"
+    )
+
+
+def save_predictions_to_database(results):
+    connection = get_database_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        TRUNCATE TABLE ml_prediction
+    """)
+
+    prediction_rows = []
+
+    for index, (_, row) in enumerate(results.iterrows(), start=1):
+        prediction_rows.append((
+            index,
+            int(row["machine_id"]),
+            "machine_failure_model_v1",
+            row["failure_probability"],
+            row["risk_level"]
+        ))
+
+    cursor.executemany(
+        """
+        INSERT INTO ml_prediction (
+            prediction_id,
+            machine_id,
+            model_id,
+            prediction_timestamp,
+            failure_probability,
+            risk_level,
+            prediction_status
+        )
+        VALUES (
+            %s,
+            %s,
+            %s,
+            CURRENT_TIMESTAMP,
+            %s,
+            %s,
+            'Completed'
+        )
+        """,
+        prediction_rows
+    )
+
+    connection.commit()
+
+    cursor.close()
+    connection.close()
+
+    print("Predictions saved to PostgreSQL.")
+    print(f"Records inserted: {len(prediction_rows)}")
 
 
 def predict():
@@ -52,6 +114,9 @@ def predict():
     print("\nPrediction summary")
     print("----------------------------------------")
     print(results["risk_level"].value_counts())
+
+    print("\nSaving predictions to PostgreSQL...")
+    save_predictions_to_database(results)
 
     print("\nSample predictions")
     print("----------------------------------------")

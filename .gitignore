@@ -37,3 +37,5 @@ dist/
 # ML temporary files
 *.pkl
 *.pickle
+
+dashboard/node_modules/
